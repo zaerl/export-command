@@ -51,6 +51,9 @@ class Export_Command extends WP_CLI_Command {
 	 * [--skip_comments]
 	 * : Don't include comments in the WXR export file.
 	 *
+	 * [--ignore_orphaned]
+	 * : Ignore orphaned terms and force parent to 0.
+	 *
 	 * [--max_file_size=<MB>]
 	 * : A single export file should have this many megabytes. -1 for unlimited.
 	 * ---
@@ -137,6 +140,7 @@ class Export_Command extends WP_CLI_Command {
 			'max_num_posts'     => null,
 			'author'            => null,
 			'category'          => null,
+			'ignore_orphaned'   => false,
 			'post_status'       => null,
 			'post__in'          => null,
 			'with_attachments'  => true, // or FALSE if user requested some post__in
@@ -429,6 +433,19 @@ class Export_Command extends WP_CLI_Command {
 			return false;
 		}
 		$this->export_args['category'] = $category;
+		return true;
+	}
+
+	private function check_ignore_orphaned( $ignore ) {
+		if ( null === $ignore ) {
+			return true;
+		}
+
+		if ( 0 !== (int) $ignore && 1 !== (int) $ignore ) {
+			WP_CLI::warning( 'ignore_orphaned needs to be 0 (no) or 1 (yes).' );
+			return false;
+		}
+		$this->export_args['ignore_orphaned'] = $ignore;
 		return true;
 	}
 

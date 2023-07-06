@@ -10,7 +10,7 @@ Quick links: [Using](#using) | [Installing](#installing) | [Contributing](#contr
 ## Using
 
 ~~~
-wp export [--dir=<dirname>] [--stdout] [--skip_comments] [--max_file_size=<MB>] [--filename_format=<format>] [--include_once=<before_posts>] [--start_date=<date>] [--end_date=<date>] [--post_type=<post-type>] [--post_type__not_in=<post-type>] [--post__in=<pid>] [--with_attachments] [--start_id=<pid>] [--max_num_posts=<num>] [--author=<author>] [--category=<name|id>] [--post_status=<status>]
+wp export [--dir=<dirname>] [--stdout] [--skip_comments] [--ignore_orphaned] [--max_file_size=<MB>] [--filename_format=<format>] [--include_once=<before_posts>] [--start_date=<date>] [--end_date=<date>] [--post_type=<post-type>] [--post_type__not_in=<post-type>] [--post__in=<pid>] [--with_attachments] [--start_id=<pid>] [--max_num_posts=<num>] [--author=<author>] [--category=<name|id>] [--post_status=<status>]
 ~~~
 
 Generates one or more WXR files containing authors, terms, posts,
@@ -28,6 +28,9 @@ comments, and attachments. WXR files do not include site configuration
 
 	[--skip_comments]
 		Don't include comments in the WXR export file.
+
+	[--ignore_orphaned]
+		Ignore orphaned terms and set parent to 0.
 
 	[--max_file_size=<MB>]
 		A single export file should have this many megabytes. -1 for unlimited.

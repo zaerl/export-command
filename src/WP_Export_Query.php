@@ -11,15 +11,16 @@ class WP_Export_Query {
 	const QUERY_CHUNK = 100;
 
 	private static $defaults = [
-		'post_ids'      => null,
-		'post_type'     => null,
-		'status'        => null,
-		'author'        => null,
-		'start_date'    => null,
-		'end_date'      => null,
-		'start_id'      => null,
-		'max_num_posts' => null,
-		'category'      => null,
+		'post_ids'        => null,
+		'post_type'       => null,
+		'status'          => null,
+		'author'          => null,
+		'start_date'      => null,
+		'end_date'        => null,
+		'start_id'        => null,
+		'max_num_posts'   => null,
+		'category'        => null,
+		'ignore_orphaned' => false,
 	];
 
 	private $post_ids;
@@ -96,9 +97,7 @@ class WP_Export_Query {
 			return [];
 		}
 		$categories = (array) get_categories( [ 'get' => 'all' ] );
-
-		$this->check_for_orphaned_terms( $categories );
-
+		$categories = $this->check_for_orphaned_terms( $categories );
 		$categories = self::topologically_sort_terms( $categories );
 
 		return $categories;
@@ -109,8 +108,7 @@ class WP_Export_Query {
 			return [];
 		}
 		$tags = (array) get_tags( [ 'get' => 'all' ] );
-
-		$this->check_for_orphaned_terms( $tags );
+		$tags = $this->check_for_orphaned_terms( $tags );
 
 		return $tags;
 	}
@@ -121,8 +119,9 @@ class WP_Export_Query {
 		}
 		$custom_taxonomies = get_taxonomies( [ '_builtin' => false ] );
 		$custom_terms      = (array) get_terms( $custom_taxonomies, [ 'get' => 'all' ] );
-		$this->check_for_orphaned_terms( $custom_terms );
-		$custom_terms = self::topologically_sort_terms( $custom_terms );
+		$custom_terms      = $this->check_for_orphaned_terms( $custom_terms );
+		$custom_terms      = self::topologically_sort_terms( $custom_terms );
+
 		return $custom_terms;
 	}
 
@@ -359,8 +358,8 @@ class WP_Export_Query {
 		$term_ids    = [];
 		$have_parent = [];
 
-		foreach ( $terms as $term ) {
-			$term_ids[ $term->term_id ] = true;
+		foreach ( $terms as $index => $term ) {
+			$term_ids[ $term->term_id ] = $index;
 			if ( 0 !== (int) $term->parent ) {
 				$have_parent[] = $term;
 			}
@@ -368,10 +367,17 @@ class WP_Export_Query {
 
 		foreach ( $have_parent as $has_parent ) {
 			if ( ! isset( $term_ids[ $has_parent->parent ] ) ) {
-				$this->missing_parents = $has_parent;
-				throw new WP_Export_Term_Exception( "Term is missing a parent: {$has_parent->slug} ({$has_parent->term_taxonomy_id})" );
+				if ( $this->filters['ignore_orphaned'] ) {
+					// Force the term parent to 0.
+					$terms[ $term_ids[ $has_parent->term_id ] ]->parent = 0;
+				} else {
+					$this->missing_parents = $has_parent;
+					throw new WP_Export_Term_Exception( "Term is missing a parent: {$has_parent->slug} ({$has_parent->term_taxonomy_id})" );
+				}
 			}
 		}
+
+		return $terms;
 	}
 
 	private static function get_terms_for_post( $post ) {

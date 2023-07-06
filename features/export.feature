@@ -693,6 +693,52 @@ Feature: Export content.
       0
       """
 
+  @require-wp-5.2
+  Scenario: Export a site and ignore orphaned terms
+    Given a WP install
+    And I run `wp term generate post_tag --count=1`
+    And I run `wp term generate post_tag --count=1`
+    And I run `wp plugin install wordpress-importer --activate`
+
+    When I run `wp post_tag list --format=count`
+    Then STDOUT should contain:
+      """
+      2
+      """
+
+    When I run `wp export --ignore_orphaned`
+    And save STDOUT 'Writing to file %s' as {EXPORT_FILE}
+
+    When I run `wp site empty --yes`
+    Then STDOUT should not be empty
+
+    When I run `wp post list --format=count`
+    Then STDOUT should contain:
+      """
+      0
+      """
+
+    When I run `wp comment list --format=count`
+    Then STDOUT should contain:
+      """
+      0
+      """
+
+    When I run `wp import {EXPORT_FILE} --authors=skip`
+    Then STDOUT should not be empty
+
+    When I run `wp post list --format=count`
+    Then STDOUT should contain:
+      """
+      1
+      """
+
+    When I run `wp comment list --format=count`
+    Then STDOUT should contain:
+      """
+      0
+      """
+
   Scenario: Export splitting the dump
     Given a WP install
 
